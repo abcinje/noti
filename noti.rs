@@ -12,17 +12,17 @@ fn main() {
     let cmd = &args[1];
     let args = &args[2..];
 
-    let mut process = process::Command::new(cmd)
-                                       .args(args)
-                                       .spawn()
-                                       .expect("Failed to execute command");
-    println!("Process started with pid: {}", process.id());
+    let mut proc = process::Command::new(cmd)
+                                    .args(args)
+                                    .spawn()
+                                    .expect("Failed to execute command");
+    println!("Process started with pid: {}", proc.id());
 
     loop {
-        match process.try_wait() {
+        match proc.try_wait() {
             Ok(Some(status)) => {
                 println!("Process exited with: {status}");
-                break;
+                break status;
             }
             Err(error) => {
                 eprintln!("Error attempting to wait: {error}");
@@ -30,5 +30,11 @@ fn main() {
             }
             _ => thread::yield_now(),
         };
-    }
+    };
+
+    let noti = process::Command::new("sh")
+                                .args(["send_mail.sh", cmd])
+                                .status()
+                                .unwrap();
+    assert!(noti.success());
 }
