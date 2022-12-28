@@ -1,1 +1,3 @@
-echo "Test" | mail -s "[Noti] $1 completed" abcinje@gmail.com
+msg=$1
+
+cat $msg | mail -s "[Noti] Process completed" abcinje@gmail.com
