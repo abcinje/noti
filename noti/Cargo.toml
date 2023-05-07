@@ -8,5 +8,5 @@ name = "noti"
 path = "src/noti.rs"
 
 [[bin]]
-name = "daemon"
-path = "src/daemon.rs"
+name = "server"
+path = "src/server.rs"
