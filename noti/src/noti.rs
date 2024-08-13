@@ -1,11 +1,10 @@
 use std::process::{Child, Command, ExitStatus};
 use std::{env, fs, process, thread};
 
-#[derive(Default)]
 struct ProcInfo {
-    command: Option<String>,
-    pid: Option<u32>,
-    status: Option<ExitStatus>,
+    command: String,
+    pid: u32,
+    status: ExitStatus,
 }
 
 fn launch(args: &[String]) -> Child {
@@ -38,11 +37,11 @@ fn notify(proc_info: ProcInfo) {
     fs::create_dir_all("proc").expect("Failed to create directory");
 
     let mut msg = String::new();
-    msg += &format!("Command: {}\n", proc_info.command.unwrap());
-    msg += &format!("PID: {}\n", proc_info.pid.unwrap());
-    msg += &format!("Status: {}\n", proc_info.status.unwrap());
+    msg += &format!("Command: {}\n", proc_info.command);
+    msg += &format!("PID: {}\n", proc_info.pid);
+    msg += &format!("Status: {}\n", proc_info.status);
 
-    let file = format!("proc/{}", proc_info.pid.unwrap().to_string());
+    let file = format!("proc/{}", proc_info.pid.to_string());
     fs::write(&file, msg).expect("Failed to write message");
 
     let noti = Command::new("sh")
@@ -53,8 +52,6 @@ fn notify(proc_info: ProcInfo) {
 }
 
 fn main() {
-    let mut proc_info = ProcInfo::default();
-
     let args: Vec<String> = env::args().collect();
     if args.len() == 1 {
         eprintln!("Usage: {} <cmd> [args]", args[0]);
@@ -62,13 +59,13 @@ fn main() {
     }
 
     let args = &args[1..];
-    proc_info.command = Some(args.join(" "));
-
     let proc = launch(&args);
-    proc_info.pid = Some(proc.id());
 
-    let status = wait(proc);
-    proc_info.status = Some(status);
+    let proc_info = ProcInfo {
+        command: args.join(" "),
+        pid: proc.id(),
+        status: wait(proc),
+    };
 
     notify(proc_info);
 }
