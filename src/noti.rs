@@ -45,7 +45,7 @@ fn notify(proc_info: ProcInfo) {
     fs::write(&file, msg).expect("Failed to write message");
 
     let noti = Command::new("sh")
-        .args(["send_mail.sh", &file])
+        .args(["scripts/send_mail.sh", &file])
         .status()
         .unwrap();
     assert!(noti.success());
