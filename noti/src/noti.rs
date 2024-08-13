@@ -1,26 +1,24 @@
-use std::env;
-use std::fs;
-use std::process;
-use std::thread;
+use std::process::{Child, Command, ExitStatus};
+use std::{env, fs, process, thread};
 
 #[derive(Default)]
 struct ProcInfo {
     command: Option<String>,
     pid: Option<u32>,
-    status: Option<process::ExitStatus>,
+    status: Option<ExitStatus>,
 }
 
-fn launch(args: &[String]) -> process::Child {
+fn launch(args: &[String]) -> Child {
     let cmd = &args[0];
     let args = &args[1..];
 
-    process::Command::new(cmd)
-                     .args(args)
-                     .spawn()
-                     .expect("Failed to execute command")
+    Command::new(cmd)
+        .args(args)
+        .spawn()
+        .expect("Failed to execute command")
 }
 
-fn wait(mut proc: process::Child) -> process::ExitStatus {
+fn wait(mut proc: Child) -> ExitStatus {
     loop {
         match proc.try_wait() {
             Ok(Some(status)) => {
@@ -47,10 +45,10 @@ fn notify(proc_info: ProcInfo) {
     let file = format!("proc/{}", proc_info.pid.unwrap().to_string());
     fs::write(&file, msg).expect("Failed to write message");
 
-    let noti = process::Command::new("sh")
-                                .args(["send_mail.sh", &file])
-                                .status()
-                                .unwrap();
+    let noti = Command::new("sh")
+        .args(["send_mail.sh", &file])
+        .status()
+        .unwrap();
     assert!(noti.success());
 }
 
