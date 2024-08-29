@@ -1,11 +1,10 @@
+use std::io::{self, BufWriter, Write};
+use std::net::TcpStream;
 use std::process::{Child, Command, ExitStatus};
-use std::{env, fs, process, thread};
+use std::{env, process, thread};
 
-struct ProcInfo {
-    command: String,
-    pid: u32,
-    status: ExitStatus,
-}
+mod proc_info;
+use proc_info::ProcInfo;
 
 fn launch(args: &[String]) -> Child {
     let cmd = &args[0];
@@ -33,25 +32,7 @@ fn wait(mut proc: Child) -> ExitStatus {
     }
 }
 
-fn notify(proc_info: ProcInfo) {
-    fs::create_dir_all("proc").expect("Failed to create directory");
-
-    let mut msg = String::new();
-    msg += &format!("Command: {}\n", proc_info.command);
-    msg += &format!("PID: {}\n", proc_info.pid);
-    msg += &format!("Status: {}\n", proc_info.status);
-
-    let file = format!("proc/{}", proc_info.pid.to_string());
-    fs::write(&file, msg).expect("Failed to write message");
-
-    let noti = Command::new("sh")
-        .args(["scripts/send_mail.sh", &file])
-        .status()
-        .unwrap();
-    assert!(noti.success());
-}
-
-fn main() {
+fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
     if args.len() == 1 {
         eprintln!("Usage: {} <cmd> [args]", args[0]);
@@ -64,8 +45,13 @@ fn main() {
     let proc_info = ProcInfo {
         command: args.join(" "),
         pid: proc.id(),
-        status: wait(proc),
+        status: wait(proc).to_string(),
     };
 
-    notify(proc_info);
+    let mut stream = TcpStream::connect("127.0.0.1:7878")?;
+    let mut writer = BufWriter::new(&mut stream);
+    let content = serde_json::to_string(&proc_info)?;
+    writer.write(content.as_bytes())?;
+
+    Ok(())
 }
