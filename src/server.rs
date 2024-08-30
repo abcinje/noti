@@ -30,7 +30,9 @@ fn handle_connection(mut stream: TcpStream) {
     reader.read_to_string(&mut content).unwrap();
 
     let proc_info: ProcInfo = serde_json::from_str(&content).unwrap();
-    notify(proc_info);
+    if proc_info.is_term {
+        notify(proc_info);
+    }
 }
 
 fn main() -> io::Result<()> {

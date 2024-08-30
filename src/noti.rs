@@ -26,6 +26,7 @@ fn main() -> io::Result<()> {
     let proc_info = ProcInfo {
         command: args.join(" "),
         pid: proc.id(),
+        is_term: true,
         status: proc.wait()?.to_string(),
     };
 
